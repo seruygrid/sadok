@@ -1,36 +1,55 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const hero = document.getElementById("hero");
+    const onScroll = () => {
+      const threshold = hero ? hero.offsetHeight * 0.8 : 500;
+      setScrolled(window.scrollY > threshold);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-[#f8faf7] overflow-x-hidden">
       {/* NAV */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-transparent py-6">
+      <nav className={`fixed top-0 inset-x-0 z-50 py-6 transition-all duration-300 ${scrolled ? "bg-[#1A2E1A] shadow-lg" : "bg-transparent"}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex cursor-pointer items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group">
             <span className="text-2xl transition-transform group-hover:scale-110">
               🌳
             </span>
             <span className="text-xl font-semibold tracking-tight text-white">
               Садок
             </span>
-          </div>
+          </Link>
           <div className="hidden items-center gap-8 md:flex">
-            <button className="text-sm font-medium text-white/90 transition-colors hover:opacity-70">
+            <a href="#how" className="text-sm font-medium text-white/90 transition-colors hover:opacity-70">
               Як це працює
-            </button>
-            <button className="text-sm font-medium text-white/90 transition-colors hover:opacity-70">
+            </a>
+            <a href="#pricing" className="text-sm font-medium text-white/90 transition-colors hover:opacity-70">
               Ціни
-            </button>
-            <button className="text-sm font-medium text-white/90 transition-colors hover:opacity-70">
+            </a>
+            <a href="#faq" className="text-sm font-medium text-white/90 transition-colors hover:opacity-70">
               FAQ
-            </button>
-            <button className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95">
+            </a>
+            <a href="#pricing" className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95">
               Подарувати
-            </button>
+            </a>
           </div>
-          <button className="md:hidden p-2 -mr-2">
-            <span className="sr-only">Меню</span>
+          <button
+            className="md:hidden p-2 -mr-2"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label="Меню"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6 text-white"
@@ -41,12 +60,54 @@ export default function Home() {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M4 5h16" />
-              <path d="M4 12h16" />
-              <path d="M4 19h16" />
+              {mobileMenuOpen ? (
+                <>
+                  <path d="M18 6 6 18" />
+                  <path d="M6 6l12 12" />
+                </>
+              ) : (
+                <>
+                  <path d="M4 5h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 19h16" />
+                </>
+              )}
             </svg>
           </button>
         </div>
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden mt-2 mx-4 rounded-2xl bg-white/95 backdrop-blur-md shadow-xl p-6 flex flex-col gap-4">
+            <a
+              href="#how"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-base font-medium text-slate-800 hover:text-emerald-700 transition-colors"
+            >
+              Як це працює
+            </a>
+            <a
+              href="#pricing"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-base font-medium text-slate-800 hover:text-emerald-700 transition-colors"
+            >
+              Ціни
+            </a>
+            <a
+              href="#faq"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-base font-medium text-slate-800 hover:text-emerald-700 transition-colors"
+            >
+              FAQ
+            </a>
+            <a
+              href="#pricing"
+              onClick={() => setMobileMenuOpen(false)}
+              className="rounded-full bg-emerald-600 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg transition-all hover:bg-emerald-700"
+            >
+              Подарувати
+            </a>
+          </div>
+        )}
       </nav>
 
       <main>
@@ -75,12 +136,12 @@ export default function Home() {
               свого дерева.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
-              <button className="w-full sm:w-auto rounded-full bg-emerald-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-emerald-500/40 transition-all hover:-translate-y-1 hover:bg-emerald-700 active:translate-y-0">
+              <a href="#pricing" className="w-full sm:w-auto rounded-full bg-emerald-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-emerald-500/40 transition-all hover:-translate-y-1 hover:bg-emerald-700 active:translate-y-0 text-center">
                 Подарувати дерево
-              </button>
-              <button className="w-full sm:w-auto rounded-full border border-white/30 bg-white/10 px-8 py-4 text-lg font-medium text-white backdrop-blur-md transition-all hover:-translate-y-1 hover:bg-white/20 active:translate-y-0">
+              </a>
+              <a href="#how" className="w-full sm:w-auto rounded-full border border-white/30 bg-white/10 px-8 py-4 text-lg font-medium text-white backdrop-blur-md transition-all hover:-translate-y-1 hover:bg-white/20 active:translate-y-0 text-center">
                 Як це працює ↓
-              </button>
+              </a>
             </div>
           </div>
         </section>
@@ -285,6 +346,52 @@ export default function Home() {
           </div>
         </section>
 
+        {/* DELIVERY & RECEIPT CONDITIONS */}
+        <section id="delivery" className="bg-white py-24 sm:py-32">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto mb-16 max-w-3xl text-center">
+              <h2 className="mb-4 text-3xl md:text-5xl font-semibold tracking-tight text-slate-900">
+                Умови отримання
+              </h2>
+              <p className="text-lg text-slate-600">
+                Все просто — ми беремо на себе турботу про дерево та доставку врожаю.
+              </p>
+            </div>
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  icon: "📦",
+                  title: "Доставка Новою Поштою",
+                  text: "Фрукти доставляємо по всій Україні через Нову Пошту. Доставка включена у вартість пакету. Отримувач отримує повідомлення з трек-номером.",
+                },
+                {
+                  icon: "📅",
+                  title: "Терміни отримання",
+                  text: "Врожай збирається щороку у вересні–жовтні. Ми зв'яжемося з вами за 3–5 днів до відправлення та узгодимо зручне відділення Нової Пошти.",
+                },
+                {
+                  icon: "🚗",
+                  title: "Самовивіз із саду",
+                  text: "Ви можете забрати врожай самостійно або відвідати своє дерево (пакети Стандарт і Преміум). Адреса: м. Львів, вул. Зелена 281а. За попереднім записом.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-[#FCFAF8] p-8 shadow-sm"
+                >
+                  <span className="text-4xl">{item.icon}</span>
+                  <h3 className="text-xl font-semibold text-slate-900">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-slate-600">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* FINAL CTA */}
         <section className="relative overflow-hidden bg-emerald-700 py-24 text-white">
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80')] bg-cover bg-center opacity-5 mix-blend-overlay" />
@@ -295,9 +402,9 @@ export default function Home() {
             <p className="mb-10 text-xl md:text-2xl text-emerald-50">
               Живий подарунок, який росте разом із вашими спогадами
             </p>
-            <button className="rounded-full bg-white px-10 py-5 text-xl font-bold text-emerald-700 shadow-xl shadow-black/10 transition-all hover:scale-105 active:scale-95">
+            <a href="#pricing" className="rounded-full bg-white px-10 py-5 text-xl font-bold text-emerald-700 shadow-xl shadow-black/10 transition-all hover:scale-105 active:scale-95">
               Обрати пакет
-            </button>
+            </a>
           </div>
         </section>
 
@@ -314,26 +421,52 @@ export default function Home() {
             </div>
             <div className="space-y-4">
               {[
-                "Коли висаджується дерево?",
-                "Коли приходять фрукти?",
-                "Чи можна приїхати до дерева?",
-                "Що якщо урожай буде менший?",
-              ].map((q) => (
+                {
+                  q: "Коли висаджується дерево?",
+                  a: "Дерева висаджуються навесні (березень–квітень) або восени (жовтень–листопад). Після оформлення замовлення ми повідомимо вас про точну дату висадки та надішлемо фото і GPS-координати вашого дерева. Зазвичай між оплатою і висадкою проходить не більше 2–4 тижнів.",
+                },
+                {
+                  q: "Які породи дерев доступні?",
+                  a: "Ми висаджуємо яблуні, груші, сливи та черешні — сорти, адаптовані до клімату Львівської області. При оформленні замовлення ви можете вказати побажання щодо породи, і ми постараємося їх врахувати.",
+                },
+                {
+                  q: "Коли приходять фрукти?",
+                  a: "Перший повноцінний урожай зазвичай з'являється на 2–3 рік після висадки. Далі щороку у вересні–жовтні ми збираємо врожай і доставляємо фрукти отримувачу Новою Поштою по всій Україні. Ми завчасно повідомляємо про дату відправлення.",
+                },
+                {
+                  q: "Як виглядає сертифікат?",
+                  a: "Це красиво оформлений PDF-документ з іменем отримувача, фото дерева і його GPS-координатами. Ви отримуєте його на email одразу після висадки. За бажанням можемо надіслати друкований варіант поштою.",
+                },
+                {
+                  q: "Чи можна приїхати до дерева?",
+                  a: "Так, у пакетах Стандарт і Преміум передбачено можливість відвідати сад. Візит організовується за попереднім записом у сезон (травень–жовтень). Сад розташований за адресою: м. Львів, вул. Зелена 281а. Тривалість візиту — до 2 годин.",
+                },
+                {
+                  q: "Чи можна подарувати дерево як сюрприз?",
+                  a: "Так! Ви купуєте сертифікат на себе, а потім передаєте його отримувачу в зручний момент. Ім'я на сертифікаті та табличці вказуєте під час оформлення — це може бути ваше ім'я або ім'я того, кому даруєте.",
+                },
+                {
+                  q: "Що відбувається з деревом, якщо я не продовжу?",
+                  a: "Дерево залишається у саду й продовжує рости. Після першого року ми зв'яжемося з вами щодо продовження догляду. Якщо ви вирішите не продовжувати, дерево буде перепризначено іншому замовнику, а ви отримаєте останній врожай і фото.",
+                },
+                {
+                  q: "Що якщо урожай буде менший?",
+                  a: "Якщо через погодні умови врожай виявиться меншим за заявлений, ми пропорційно компенсуємо різницю у наступному сезоні або повертаємо кошти за незібрані кілограми на картку протягом 5 робочих днів.",
+                },
+              ].map((item) => (
                 <details
-                  key={q}
+                  key={item.q}
                   className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors hover:border-emerald-400/60"
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-5 text-left text-lg font-semibold text-slate-900 focus:outline-none focus-visible:bg-emerald-50">
-                    <span className="pr-8">{q}</span>
+                    <span className="pr-8">{item.q}</span>
                     <span className="text-slate-400 group-open:hidden">+</span>
                     <span className="hidden text-slate-400 group-open:inline">
                       −
                     </span>
                   </summary>
-                  <div className="px-6 pb-5 pt-0 text-sm text-slate-700">
-                    Відповідь можна адаптувати під ваш реальний процес (сезон
-                    посадки, строки врожаю, умови візиту та політику щодо
-                    менших урожаїв).
+                  <div className="px-6 pb-5 pt-0 text-sm leading-relaxed text-slate-700">
+                    {item.a}
                   </div>
                 </details>
               ))}
@@ -343,9 +476,9 @@ export default function Home() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#1A2E1A] pt-20 pb-10 text-white">
+      <footer id="contacts" className="bg-[#1A2E1A] pt-20 pb-10 text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-16 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5 lg:gap-8">
+          <div className="mb-16 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
             <div className="lg:col-span-2">
               <div className="mb-6 flex items-center gap-2">
                 <span className="text-3xl">🌳</span>
@@ -353,27 +486,25 @@ export default function Home() {
                   Садок
                 </span>
               </div>
-              <p className="mb-8 max-w-sm text-lg text-white/70">
+              <p className="mb-6 max-w-sm text-lg text-white/70">
                 Живі подарунки зі справжнього саду. Даруйте емоції, які ростуть
                 та приносять плоди роками.
               </p>
-            </div>
-            <div>
-              <h4 className="mb-6 text-lg font-bold text-white/90">Садок</h4>
-              <ul className="space-y-4 text-sm">
-                <li>
-                  <a className="text-white/60 hover:text-white" href="#">
-                    Про нас
+              <ul className="space-y-3 text-sm text-white/70">
+                <li className="flex items-start gap-2">
+                  <span>📍</span>
+                  <span>м. Львів, вул. Зелена 281а, 73</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span>📞</span>
+                  <a href="tel:+380967957454" className="hover:text-white transition-colors">
+                    +38 096 795 74 54
                   </a>
                 </li>
-                <li>
-                  <a className="text-white/60 hover:text-white" href="#">
-                    Наш сад
-                  </a>
-                </li>
-                <li>
-                  <a className="text-white/60 hover:text-white" href="#">
-                    Команда
+                <li className="flex items-center gap-2">
+                  <span>✉️</span>
+                  <a href="mailto:serhii.lakodei@gmail.com" className="hover:text-white transition-colors">
+                    serhii.lakodei@gmail.com
                   </a>
                 </li>
               </ul>
@@ -382,19 +513,19 @@ export default function Home() {
               <h4 className="mb-6 text-lg font-bold text-white/90">Послуги</h4>
               <ul className="space-y-4 text-sm">
                 <li>
-                  <button className="text-white/60 transition-colors hover:text-white">
+                  <a className="text-white/60 transition-colors hover:text-white" href="#how">
                     Як це працює
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button className="text-white/60 transition-colors hover:text-white">
+                  <a className="text-white/60 transition-colors hover:text-white" href="#pricing">
                     Ціни
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button className="text-white/60 transition-colors hover:text-white">
-                    Сертифікати
-                  </button>
+                  <a className="text-white/60 transition-colors hover:text-white" href="#delivery">
+                    Умови отримання
+                  </a>
                 </li>
               </ul>
             </div>
@@ -404,18 +535,18 @@ export default function Home() {
               </h4>
               <ul className="space-y-4 text-sm">
                 <li>
-                  <a className="text-white/60 hover:text-white" href="#">
+                  <a className="text-white/60 hover:text-white" href="#faq">
                     FAQ
                   </a>
                 </li>
                 <li>
-                  <a className="text-white/60 hover:text-white" href="#">
+                  <a className="text-white/60 hover:text-white" href="#contacts">
                     Контакти
                   </a>
                 </li>
                 <li>
-                  <a className="text-white/60 hover:text-white" href="#">
-                    Умови використання
+                  <a className="text-white/60 hover:text-white" href="/refund">
+                    Умови повернення
                   </a>
                 </li>
               </ul>
@@ -423,7 +554,10 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col items-center justify-between gap-6 border-t border-white/10 pt-8 text-sm text-white/60 md:flex-row">
-            <p>© 2026 Садок. Всі права захищено. sadok.store</p>
+            <div className="flex flex-col gap-1">
+              <p>© 2026 Садок. Всі права захищено. sadok.store</p>
+              <p>ФОП Лакодей Сергій Миколайович</p>
+            </div>
             <div className="flex gap-4">
               {["facebook", "instagram", "twitter"].map((social) => (
                 <a
