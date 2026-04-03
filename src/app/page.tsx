@@ -4,9 +4,70 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
+type Plan = "basic" | "standard" | "premium";
+
+const PLAN_LABELS: Record<Plan, { name: string; price: string }> = {
+  basic: { name: "Базовий", price: "2 490" },
+  standard: { name: "Стандарт", price: "3 990" },
+  premium: { name: "Преміум", price: "5 990" },
+};
+
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  // strip leading country code if user typed it
+  const local = digits.startsWith("380") ? digits.slice(3) : digits.startsWith("0") ? digits.slice(1) : digits;
+  const d = local.slice(0, 9);
+  let result = "+380";
+  if (d.length > 0) result += " " + d.slice(0, 2);
+  if (d.length > 2) result += " " + d.slice(2, 5);
+  if (d.length > 5) result += " " + d.slice(5, 7);
+  if (d.length > 7) result += " " + d.slice(7, 9);
+  return result;
+}
+
+const EMPTY_FORM = {
+  buyerEmail: "",
+  receiverName: "",
+  receiverLastName: "",
+  receiverEmail: "",
+  receiverPhone: "",
+  receiverAddress: "",
+};
+
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [modal, setModal] = useState<{ open: boolean; plan: Plan | null }>({ open: false, plan: null });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const openModal = (plan: Plan) => {
+    setForm(EMPTY_FORM);
+    setFormError("");
+    setModal({ open: true, plan });
+  };
+
+  const closeModal = () => setModal({ open: false, plan: null });
+
+  const handlePay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setFormError("");
+    try {
+      const res = await fetch("/api/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: modal.plan, ...form }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Помилка");
+      window.location.href = data.pageUrl;
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : "Сталася помилка. Спробуйте ще раз.");
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const hero = document.getElementById("hero");
@@ -127,73 +188,22 @@ export default function Home() {
 
           <div className="relative z-10 mt-16 max-w-4xl px-4 text-center mx-auto">
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-semibold tracking-tight leading-[1.1] text-white">
-              Подаруй дерево, яке буде{" "}
-              <br className="hidden md:block" /> плодоносити роками 🌳
+              Живий подарунок,<br className="hidden sm:block" /> який росте роками 🌳
             </h1>
-            <p className="mt-6 sm:mt-8 mx-auto max-w-3xl text-lg sm:text-xl md:text-2xl font-medium leading-relaxed text-white/90">
-              Живий подарунок, який росте у справжньому саду біля Львова.
-              Отримувач отримує фрукти, фото дерева та можливість приїхати до
-              свого дерева.
+            <p className="mt-6 sm:mt-8 mx-auto max-w-2xl text-lg sm:text-xl md:text-2xl font-medium leading-relaxed text-white/90">
+              Справжнє плодове дерево у саду Львівської області — з іменною табличкою, фото та фруктами, які доставимо додому.
             </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
+            <p className="mt-4 text-sm text-white/50 text-center">
+              від 2 490 грн · доставка включена · по всій Україні
+            </p>
+
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
               <a href="#pricing" className="w-full sm:w-auto rounded-full bg-emerald-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-emerald-500/40 transition-all hover:-translate-y-1 hover:bg-emerald-700 active:translate-y-0 text-center">
                 Подарувати дерево
               </a>
               <a href="#how" className="w-full sm:w-auto rounded-full border border-white/30 bg-white/10 px-8 py-4 text-lg font-medium text-white backdrop-blur-md transition-all hover:-translate-y-1 hover:bg-white/20 active:translate-y-0 text-center">
                 Як це працює ↓
               </a>
-            </div>
-          </div>
-        </section>
-
-        {/* EMOTIONAL BLOCK */}
-        <section className="bg-[#FCFAF8] py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-16 max-w-3xl text-center">
-              <h2 className="mb-6 text-3xl md:text-5xl font-semibold tracking-tight text-slate-900">
-                Подарунок, який не зникає через тиждень
-              </h2>
-              <p className="text-lg md:text-xl leading-relaxed text-slate-600">
-                Більшість подарунків забуваються, квіти в&apos;януть, а цукерки
-                з&apos;їдаються за день. Дерево ж росте роками, щосезону
-                приносячи плоди. Це жива пам&apos;ять, яка стає лише ціннішою з
-                часом.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-              {[
-                {
-                  src: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80",
-                  title: "Іменна табличка на кожному дереві",
-                },
-                {
-                  src: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=600&q=80",
-                  title: "Свіжі фрукти з власного врожаю",
-                },
-                {
-                  src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80",
-                  title: "Можливість приїхати у сад разом",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="group relative aspect-[4/5] overflow-hidden rounded-3xl shadow-lg md:aspect-square"
-                >
-                  <Image
-                    src={item.src}
-                    alt={item.title}
-                    fill
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <p className="text-lg md:text-xl font-medium leading-tight text-white">
-                      {item.title}
-                    </p>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
@@ -220,12 +230,12 @@ export default function Home() {
                 {
                   step: 2,
                   title: "Ми висаджуємо дерево",
-                  text: "Наша команда висаджує дерево у партнерському саду біля Львова. Ти отримуєш фото і GPS-координати.",
+                  text: "Наша команда висаджує дерево у партнерському саду у Львівській області. Ти отримуєш фото і GPS-координати.",
                 },
                 {
                   step: 3,
-                  title: "Отримувач отримує плоди",
-                  text: "Коли приходить урожай, отримувач отримує свіжі фрукти прямо зі свого дерева.",
+                  title: "Фрукти — кількома посилками",
+                  text: "Відправляємо фрукти частинами кожної суботи у сезон — щоб не чекати і завжди отримувати свіже.",
                 },
               ].map((item) => (
                 <div
@@ -250,95 +260,192 @@ export default function Home() {
           </div>
         </section>
 
+        {/* DELIVERY STAGES */}
+        <section className="bg-white pb-24 sm:pb-32">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="rounded-3xl bg-emerald-50 border border-emerald-100 p-8 sm:p-12">
+              <div className="text-center mb-10">
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-3">Як доставляємо фрукти</p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Кілька посилок, а не одна велика</h3>
+                <p className="mt-3 text-slate-500 max-w-xl mx-auto text-sm sm:text-base">Поки твоє дерево росте, доставляємо фрукти з нашого саду — кількома партіями щосуботи.</p>
+              </div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                {[
+                  {
+                    label: "Базовий · 5 кг",
+                    color: "border-emerald-200",
+                    accent: "text-emerald-700",
+                    stages: [
+                      { icon: "📜", title: "Одразу після покупки", sub: "Сертифікат" },
+                      { icon: "📦", title: "Суботу після висадки", sub: "~2 кг фруктів" },
+                      { icon: "📦", title: "Через 4 тижні", sub: "~3 кг фруктів" },
+                    ],
+                  },
+                  {
+                    label: "Стандарт · 10 кг",
+                    color: "border-emerald-600",
+                    accent: "text-emerald-700",
+                    featured: true,
+                    stages: [
+                      { icon: "📜", title: "Одразу після покупки", sub: "Сертифікат" },
+                      { icon: "📦", title: "Суботу після висадки", sub: "~3 кг фруктів" },
+                      { icon: "📦", title: "Через 3 тижні", sub: "~4 кг фруктів" },
+                      { icon: "📦", title: "Через 6 тижнів", sub: "~3 кг фруктів" },
+                    ],
+                  },
+                  {
+                    label: "Преміум · 20 кг",
+                    color: "border-amber-200",
+                    accent: "text-amber-700",
+                    stages: [
+                      { icon: "📜", title: "Одразу після покупки", sub: "Сертифікат" },
+                      { icon: "📦", title: "Суботу після висадки", sub: "~5 кг фруктів" },
+                      { icon: "📦", title: "Через 2 тижні", sub: "~5 кг фруктів" },
+                      { icon: "📦", title: "Через 4 тижні", sub: "~5 кг фруктів" },
+                      { icon: "📦", title: "Через 6 тижнів", sub: "~5 кг фруктів" },
+                    ],
+                  },
+                ].map((pkg) => (
+                  <div key={pkg.label} className={`rounded-2xl bg-white border-2 ${pkg.color} p-6`}>
+                    <p className={`text-xs font-bold uppercase tracking-widest ${pkg.accent} mb-4`}>{pkg.label}</p>
+                    <div className="flex flex-col gap-0">
+                      {pkg.stages.map((s, i) => (
+                        <div key={i} className={`flex items-start gap-3 py-3 ${i < pkg.stages.length - 1 ? "border-b border-dashed border-slate-100" : ""}`}>
+                          <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center text-base flex-shrink-0">{s.icon}</div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800 leading-snug">{s.title}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{s.sub}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FOR WHOM */}
+        <section id="forwhom" className="bg-[#FCFAF8] py-24 sm:py-32">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-3">Для кого</p>
+              <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-slate-900 mb-4">Ідеально пасує, коли…</h2>
+              <p className="text-lg text-slate-500 max-w-md mx-auto">Хочеться подарувати щось справжнє, а не чергові квіти чи ресторанний сертифікат</p>
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { emoji: "🎂", title: "День народження", text: "Подарунок, який нагадуватиме про тебе кожного разу, коли дерево цвіте." },
+                { emoji: "👶", title: "Народження дитини", text: "Дерево росте разом із дитиною. Через 10 років вона побачить «своє дерево» у саду." },
+                { emoji: "💍", title: "Весілля або річниця", text: "Живий символ стосунків — посаджений у важливий день, із датою на табличці." },
+                { emoji: "🕊️", title: "На пам'ять", text: "Дерево як живий пам'ятник — довговічний і реальний, з іменем на табличці." },
+                { emoji: "🏢", title: "Корпоративний подарунок", text: "Незабутній подарунок команді або партнерам — нестандартний і зі змістом." },
+              ].map((item) => (
+                <div key={item.title} className="rounded-3xl bg-white border border-slate-100 p-7 shadow-sm">
+                  <div className="text-4xl mb-4">{item.emoji}</div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
+                  <p className="text-sm leading-relaxed text-slate-500">{item.text}</p>
+                </div>
+              ))}
+              <div className="rounded-3xl bg-[#1A2E1A] p-7 flex flex-col justify-between">
+                <div>
+                  <div className="text-4xl mb-4">✨</div>
+                  <h3 className="text-lg font-bold text-white mb-2">Просто тому що хочеться</h3>
+                  <p className="text-sm leading-relaxed text-white/60 mb-6">Посадити своє дерево. Залишити живий слід.</p>
+                </div>
+                <a href="#pricing" className="inline-block rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#1A2E1A] text-center hover:bg-emerald-50 transition-colors">
+                  Подарувати собі →
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* PRICING */}
-        <section
-          id="pricing"
-          className="bg-[#F6F9F6] py-24 sm:py-32"
-        >
+        <section id="pricing" className="bg-[#F6F9F6] py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto mb-16 max-w-3xl text-center">
-              <h2 className="mb-4 text-3xl md:text-5xl font-semibold tracking-tight text-slate-900">
-                Обери свій пакет
-              </h2>
-              <p className="text-lg text-slate-600">
-                Кожен пакет включає посадку дерева та іменний сертифікат.
-              </p>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-3">Пакети</p>
+              <h2 className="mb-4 text-3xl md:text-5xl font-semibold tracking-tight text-slate-900">Обери свій пакет</h2>
+              <p className="text-lg text-slate-500">Кожен пакет включає посадку дерева та іменний сертифікат</p>
             </div>
 
-            <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-3">
+            <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-3 items-stretch">
               {/* Basic */}
-              <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-8 shadow-lg">
-                <h3 className="mb-2 text-2xl font-semibold text-slate-900">
-                  Базовий
-                </h3>
-                <div className="mb-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tracking-tight text-slate-900">
-                    2 490
-                  </span>
-                  <span className="text-sm font-medium text-slate-500">
-                    грн
-                  </span>
+              <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                <div className="flex-1">
+                  <h3 className="mb-2 text-2xl font-semibold text-slate-900">Базовий</h3>
+                  <div className="mb-1 flex items-baseline gap-1">
+                    <span className="text-4xl font-bold tracking-tight text-slate-900">2 490</span>
+                    <span className="text-sm font-medium text-slate-400">грн</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mb-6">3 доставки · 5 кг фруктів</p>
+                  <ul className="space-y-3 text-sm min-h-[200px]">
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Посадка дерева</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Іменний сертифікат (фізичний)</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Фото дерева + GPS</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>5 кг фруктів · 3 посилки</li>
+                    <li className="flex gap-2 text-slate-300"><span className="flex-shrink-0">–</span>Табличка з іменем</li>
+                    <li className="flex gap-2 text-slate-300"><span className="flex-shrink-0">–</span>Відвідування саду</li>
+                    <li className="flex gap-2 text-slate-300"><span className="flex-shrink-0">–</span>Відео висадки</li>
+                  </ul>
                 </div>
-                <ul className="mb-8 space-y-4 text-sm text-slate-700">
-                  <li>• Посадка дерева</li>
-                  <li>• Іменний сертифікат</li>
-                  <li>• Фото дерева</li>
-                  <li>• 5 кг фруктів</li>
-                </ul>
-                <button className="mt-auto w-full rounded-xl border-2 border-emerald-600 px-4 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50">
+                <button onClick={() => openModal("basic")} className="mt-8 w-full rounded-xl bg-[#1A2E1A] px-4 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#243d24]">
                   Подарувати
                 </button>
               </div>
 
               {/* Standard */}
-              <div className="relative z-10 flex flex-col rounded-3xl border-2 border-emerald-600 bg-white p-8 shadow-2xl">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-bold uppercase tracking-wider text-white">
+              <div className="relative flex flex-col rounded-3xl border-2 border-emerald-600 bg-white p-8 shadow-xl shadow-emerald-500/10">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white whitespace-nowrap">
                   Найпопулярніший
                 </div>
-                <h3 className="mt-2 mb-2 text-2xl font-semibold text-slate-900">
-                  Стандарт
-                </h3>
-                <div className="mb-6 flex items-baseline gap-1">
-                  <span className="text-5xl font-bold tracking-tight text-emerald-700">
-                    3 990
-                  </span>
-                  <span className="text-sm font-medium text-slate-500">
-                    грн
-                  </span>
+                <div className="flex-1 mt-2">
+                  <h3 className="mb-2 text-2xl font-semibold text-slate-900">Стандарт</h3>
+                  <div className="mb-1 flex items-baseline gap-1">
+                    <span className="text-5xl font-bold tracking-tight text-emerald-700">3 990</span>
+                    <span className="text-sm font-medium text-slate-400">грн</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mb-6">4 доставки · 10 кг фруктів</p>
+                  <ul className="space-y-3 text-sm min-h-[200px]">
+                    <li className="flex gap-2 text-slate-800 font-medium"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Посадка дерева</li>
+                    <li className="flex gap-2 text-slate-800 font-medium"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Іменний сертифікат (фізичний)</li>
+                    <li className="flex gap-2 text-slate-800 font-medium"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Фото дерева + GPS</li>
+                    <li className="flex gap-2 text-slate-800 font-medium"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>10 кг фруктів · 4 посилки</li>
+                    <li className="flex gap-2 text-slate-800 font-medium"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Табличка з іменем на дереві</li>
+                    <li className="flex gap-2 text-slate-800 font-medium"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Відвідування саду (за записом)</li>
+                    <li className="flex gap-2 text-slate-300"><span className="flex-shrink-0">–</span>Відео висадки</li>
+                  </ul>
                 </div>
-                <ul className="mb-8 space-y-4 text-sm font-medium text-slate-900">
-                  <li>• Посадка дерева</li>
-                  <li>• Іменний сертифікат</li>
-                  <li>• Табличка з імʼям</li>
-                  <li>• 10 кг фруктів</li>
-                  <li>• Можливість відвідати дерево</li>
-                </ul>
-                <button className="mt-auto w-full rounded-xl bg-emerald-600 px-4 py-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-colors hover:bg-emerald-700">
+                <button onClick={() => openModal("standard")} className="mt-8 w-full rounded-xl bg-emerald-600 px-4 py-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-colors hover:bg-emerald-700">
                   Подарувати
                 </button>
               </div>
 
               {/* Premium */}
-              <div className="flex h-full flex-col rounded-3xl border border-amber-200 bg-white p-8 shadow-lg">
-                <h3 className="mb-2 text-2xl font-semibold text-slate-900">
-                  Преміум
-                </h3>
-                <div className="mb-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tracking-tight text-slate-900">
-                    5 990
-                  </span>
-                  <span className="text-sm font-medium text-slate-500">
-                    грн
-                  </span>
+              <div className="flex flex-col rounded-3xl border border-amber-200 bg-white p-8 shadow-sm">
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-2xl font-semibold text-slate-900">Преміум</h3>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">⭐ Максимум</span>
+                  </div>
+                  <div className="mb-1 flex items-baseline gap-1">
+                    <span className="text-4xl font-bold tracking-tight text-slate-900">5 990</span>
+                    <span className="text-sm font-medium text-slate-400">грн</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mb-6">5 доставок · 20 кг фруктів</p>
+                  <ul className="space-y-3 text-sm min-h-[200px]">
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Посадка дерева</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Іменний сертифікат (фізичний)</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Фото дерева + GPS</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>20 кг фруктів · 5 посилок</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Табличка з іменем на дереві</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Відвідування саду (за записом)</li>
+                    <li className="flex gap-2 text-slate-700"><span className="text-emerald-600 font-bold flex-shrink-0">✓</span>Відео висадки</li>
+                  </ul>
                 </div>
-                <ul className="mb-8 space-y-4 text-sm text-slate-700">
-                  <li>• Посадка дерева</li>
-                  <li>• Відео посадки</li>
-                  <li>• Табличка з імʼям</li>
-                  <li>• 20 кг фруктів</li>
-                  <li>• Можливість приїхати до дерева</li>
-                </ul>
-                <button className="mt-auto w-full rounded-xl border-2 border-emerald-600 px-4 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50">
+                <button onClick={() => openModal("premium")} className="mt-8 w-full rounded-xl bg-[#1A2E1A] px-4 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#243d24]">
                   Подарувати
                 </button>
               </div>
@@ -350,44 +457,58 @@ export default function Home() {
         <section id="delivery" className="bg-white py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto mb-16 max-w-3xl text-center">
-              <h2 className="mb-4 text-3xl md:text-5xl font-semibold tracking-tight text-slate-900">
-                Умови отримання
-              </h2>
-              <p className="text-lg text-slate-600">
-                Все просто — ми беремо на себе турботу про дерево та доставку врожаю.
-              </p>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-3">Логістика</p>
+              <h2 className="mb-4 text-3xl md:text-5xl font-semibold tracking-tight text-slate-900">Умови отримання</h2>
+              <p className="text-lg text-slate-500">Ми беремо на себе турботу про дерево і доставку фруктів</p>
             </div>
-            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[
                 {
                   icon: "📦",
                   title: "Доставка Новою Поштою",
-                  text: "Фрукти доставляємо по всій Україні через Нову Пошту. Доставка включена у вартість пакету. Отримувач отримує повідомлення з трек-номером.",
+                  text: "Фрукти доставляємо по всій Україні. Доставка включена у вартість. Перед кожною відправкою надішлемо трек-номер.",
                 },
                 {
                   icon: "📅",
-                  title: "Терміни отримання",
-                  text: "Врожай збирається щороку у вересні–жовтні. Ми зв'яжемося з вами за 3–5 днів до відправлення та узгодимо зручне відділення Нової Пошти.",
+                  title: "Графік відправок",
+                  text: "Фрукти відправляємо кожної суботи у сезон (вересень–жовтень). За 2–3 дні до відправки повідомимо і узгодимо зручне відділення.",
                 },
                 {
                   icon: "🚗",
                   title: "Самовивіз із саду",
-                  text: "Ви можете забрати врожай самостійно або відвідати своє дерево (пакети Стандарт і Преміум). Адреса: м. Львів, вул. Зелена 281а. За попереднім записом.",
+                  text: "Можна забрати самостійно або відвідати дерево (пакети Стандарт і Преміум, за записом). Сад — у Львівській області. Точна адреса буде визначена у вересні 2026 і надіслана всім власникам.",
                 },
               ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-[#FCFAF8] p-8 shadow-sm"
-                >
+                <div key={item.title} className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-[#FCFAF8] p-8 shadow-sm">
                   <span className="text-4xl">{item.icon}</span>
-                  <h3 className="text-xl font-semibold text-slate-900">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate-600">
-                    {item.text}
-                  </p>
+                  <h3 className="text-xl font-semibold text-slate-900">{item.title}</h3>
+                  <p className="text-sm leading-relaxed text-slate-500">{item.text}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FOUNDER */}
+        <section className="bg-[#FCFAF8] py-20 sm:py-24">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <div className="rounded-3xl bg-white border border-slate-100 p-8 sm:p-12 shadow-sm flex flex-col sm:flex-row gap-8 items-center sm:items-start">
+              <div className="relative flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-emerald-100 shadow-md">
+                <Image
+                  src="/founder.jpg"
+                  alt="Сергій Лакодей"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-2">Засновник</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-1">Сергій Лакодей</h3>
+                <p className="text-sm text-emerald-700 font-semibold mb-4">Засновник Садок</p>
+                <p className="text-sm sm:text-base leading-relaxed text-slate-500">
+                  Ідея Садку виникла з простого бажання — дарувати щось живе і справжнє. Не черговий букет, а подарунок з тривалістю. Я особисто відповідаю за кожне дерево і кожну посилку.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -422,36 +543,44 @@ export default function Home() {
             <div className="space-y-4">
               {[
                 {
-                  q: "Коли висаджується дерево?",
-                  a: "Дерева висаджуються навесні (березень–квітень) або восени (жовтень–листопад). Після оформлення замовлення ми повідомимо вас про точну дату висадки та надішлемо фото і GPS-координати вашого дерева. Зазвичай між оплатою і висадкою проходить не більше 2–4 тижнів.",
+                  q: "Коли я отримаю фрукти?",
+                  a: "Перша партія фруктів надходить одразу після покупки — не потрібно чекати висадки дерева. Далі, залежно від пакету, надсилаємо ще кілька менших партій щосуботи протягом сезону (вересень–жовтень). Так фрукти завжди свіжі.",
                 },
                 {
-                  q: "Які породи дерев доступні?",
-                  a: "Ми висаджуємо яблуні, груші, сливи та черешні — сорти, адаптовані до клімату Львівської області. При оформленні замовлення ви можете вказати побажання щодо породи, і ми постараємося їх врахувати.",
+                  q: "Звідки фрукти — з мого дерева?",
+                  a: "Твоє дерево щойно посаджене і потребує 2–3 роки щоб дати повноцінний урожай. Тому фрукти у твоєму пакеті — зі зрілих дерев нашого саду. Твоє дерево тим часом росте.",
                 },
                 {
-                  q: "Коли приходять фрукти?",
-                  a: "Перший повноцінний урожай зазвичай з'являється на 2–3 рік після висадки. Далі щороку у вересні–жовтні ми збираємо врожай і доставляємо фрукти отримувачу Новою Поштою по всій Україні. Ми завчасно повідомляємо про дату відправлення.",
+                  q: "Коли висаджується моє дерево?",
+                  a: "Висадка відбувається у жовтні 2026. Після посадки ти одразу отримаєш фото дерева та його GPS-координати. Локація саду буде визначена у вересні — ми повідомимо всіх власників.",
+                },
+                {
+                  q: "Які породи дерев можна обрати?",
+                  a: "Наразі доступні яблуні — сорти, адаптовані до клімату Львівської області. Ближче до висадки ми зв'яжемося з кожним покупцем особисто, щоб разом обрати породу, яка найбільше до душі та добре приживеться.",
                 },
                 {
                   q: "Як виглядає сертифікат?",
-                  a: "Це красиво оформлений PDF-документ з іменем отримувача, фото дерева і його GPS-координатами. Ви отримуєте його на email одразу після висадки. За бажанням можемо надіслати друкований варіант поштою.",
+                  a: "Реальний фізичний сертифікат з іменем отримувача, видом дерева і датою посадки — надсилається поштою після оплати. Після висадки додатково надішлемо фото дерева та GPS-координати на email.",
                 },
                 {
-                  q: "Чи можна приїхати до дерева?",
-                  a: "Так, у пакетах Стандарт і Преміум передбачено можливість відвідати сад. Візит організовується за попереднім записом у сезон (травень–жовтень). Сад розташований за адресою: м. Львів, вул. Зелена 281а. Тривалість візиту — до 2 годин.",
+                  q: "Чи можна подарувати як сюрприз?",
+                  a: "Так! Купуєш сертифікат на себе, вказуєш ім'я отримувача — і передаєш у зручний момент. Можна відправити і на email отримувача одразу після оплати.",
                 },
                 {
-                  q: "Чи можна подарувати дерево як сюрприз?",
-                  a: "Так! Ви купуєте сертифікат на себе, а потім передаєте його отримувачу в зручний момент. Ім'я на сертифікаті та табличці вказуєте під час оформлення — це може бути ваше ім'я або ім'я того, кому даруєте.",
+                  q: "Що якщо дерево не приживеться?",
+                  a: "Цей ризик ми беремо на себе повністю. Якщо дерево не приживеться — висадимо нове безкоштовно і повідомимо тебе про це.",
                 },
                 {
-                  q: "Що відбувається з деревом, якщо я не продовжу?",
-                  a: "Дерево залишається у саду й продовжує рости. Після першого року ми зв'яжемося з вами щодо продовження догляду. Якщо ви вирішите не продовжувати, дерево буде перепризначено іншому замовнику, а ви отримаєте останній врожай і фото.",
+                  q: "Чи можна приїхати до свого дерева?",
+                  a: "Так, у пакетах Стандарт і Преміум є можливість відвідати сад за попереднім записом. Локація саду буде визначена у вересні 2026 — ми повідомимо всіх власників.",
                 },
                 {
-                  q: "Що якщо урожай буде менший?",
-                  a: "Якщо через погодні умови врожай виявиться меншим за заявлений, ми пропорційно компенсуємо різницю у наступному сезоні або повертаємо кошти за незібрані кілограми на картку протягом 5 робочих днів.",
+                  q: "Як відбувається оплата?",
+                  a: "Оплата проходить онлайн через захищену платіжну систему. Приймаємо картки Visa та Mastercard. Після успішної оплати ви одразу отримуєте підтвердження на email. Ніяких прихованих платежів.",
+                },
+                {
+                  q: "Що відбувається з деревом після першого врожаю?",
+                  a: "Дерево продовжує рости і плодоносити у нашому саду. Після першого сезону ми розкажемо про варіанти підписки, яка дозволить і надалі отримувати фрукти зі свого дерева.",
                 },
               ].map((item) => (
                 <details
@@ -474,6 +603,170 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* GIFT MODAL */}
+      {modal.open && modal.plan && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+        >
+          <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between px-8 pt-8 pb-4">
+              <div>
+                <p className="text-sm font-medium text-emerald-700 uppercase tracking-wider mb-1">
+                  {PLAN_LABELS[modal.plan].name} · {PLAN_LABELS[modal.plan].price} ₴
+                </p>
+                <h2 className="text-2xl font-semibold text-slate-900">Оформити подарунок</h2>
+              </div>
+              <button
+                onClick={closeModal}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+                aria-label="Закрити"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handlePay} className="px-8 pb-8 pt-2 space-y-5">
+              <fieldset className="space-y-3">
+                <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Ваші дані</legend>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Ваш email <span className="text-red-500">*</span></label>
+                  <input
+                    type="email"
+                    required
+                    value={form.buyerEmail}
+                    onChange={(e) => setForm((f) => ({ ...f, buyerEmail: e.target.value }))}
+                    placeholder="you@example.com"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+              </fieldset>
+
+              <fieldset className="space-y-3">
+                <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Дані отримувача</legend>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Ім&apos;я <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={form.receiverName}
+                      onChange={(e) => setForm((f) => ({ ...f, receiverName: e.target.value }))}
+                      placeholder="Іван"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Прізвище <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={form.receiverLastName}
+                      onChange={(e) => setForm((f) => ({ ...f, receiverLastName: e.target.value }))}
+                      placeholder="Петренко"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Email отримувача <span className="text-red-500">*</span></label>
+                  <input
+                    type="email"
+                    required
+                    value={form.receiverEmail}
+                    onChange={(e) => setForm((f) => ({ ...f, receiverEmail: e.target.value }))}
+                    placeholder="receiver@example.com"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Телефон отримувача <span className="text-red-500">*</span></label>
+                  <input
+                    type="tel"
+                    required
+                    value={form.receiverPhone}
+                    onChange={(e) => setForm((f) => ({ ...f, receiverPhone: formatPhone(e.target.value) }))}
+                    placeholder="+380 XX XXX XX XX"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Адреса отримувача <span className="text-slate-400 font-normal">(необов&apos;язково)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.receiverAddress}
+                    onChange={(e) => setForm((f) => ({ ...f, receiverAddress: e.target.value }))}
+                    placeholder="м. Львів, вул. ..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+              </fieldset>
+
+              {formError && (
+                <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{formError}</p>
+              )}
+
+              {/* Payment methods — brandbook: show available methods, no individual bank logos */}
+              <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
+                {/* Visa */}
+                <span className="flex h-8 items-center rounded-md border border-slate-200 bg-white px-2.5">
+                  <svg viewBox="0 0 48 16" className="h-4 w-auto" aria-label="Visa">
+                    <text x="0" y="13" fontFamily="Arial" fontWeight="bold" fontSize="15" fill="#1A1F71">VISA</text>
+                  </svg>
+                </span>
+                {/* Mastercard */}
+                <span className="flex h-8 items-center gap-0.5 rounded-md border border-slate-200 bg-white px-2">
+                  <svg viewBox="0 0 34 22" className="h-4 w-auto" aria-label="Mastercard">
+                    <circle cx="12" cy="11" r="11" fill="#EB001B"/>
+                    <circle cx="22" cy="11" r="11" fill="#F79E1B"/>
+                    <path d="M17 3.8a11 11 0 0 1 0 14.4A11 11 0 0 1 17 3.8z" fill="#FF5F00"/>
+                  </svg>
+                </span>
+                {/* Apple Pay */}
+                <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-black px-3">
+                  {/* Apple logo */}
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 fill-white" aria-hidden="true">
+                    <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                  </svg>
+                  <span className="text-[11px] font-semibold leading-none text-white tracking-tight">Pay</span>
+                </span>
+                {/* Google Pay */}
+                <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3" aria-label="Google Pay">
+                  {/* Google G logo */}
+                  <svg viewBox="0 0 18 18" className="h-3.5 w-3.5" aria-hidden="true">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                    <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+                    <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.96L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
+                  </svg>
+                  <span className="text-[11px] font-semibold text-slate-700 tracking-tight">Pay</span>
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full cursor-pointer rounded-xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Зачекайте..." : `Оплатити ${PLAN_LABELS[modal.plan].price} ₴`}
+              </button>
+
+              {/* plata by mono attribution — brandbook requirement */}
+              <div className="flex items-center justify-center gap-1.5">
+                <svg className="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <span className="text-xs text-slate-400">Безпечна оплата через</span>
+                <span className="text-xs font-semibold text-slate-600 tracking-tight">plata by mono</span>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* FOOTER */}
       <footer id="contacts" className="bg-[#1A2E1A] pt-20 pb-10 text-white">
@@ -557,18 +850,6 @@ export default function Home() {
             <div className="flex flex-col gap-1">
               <p>© 2026 Садок. Всі права захищено. sadok.store</p>
               <p>ФОП Лакодей Сергій Миколайович</p>
-            </div>
-            <div className="flex gap-4">
-              {["facebook", "instagram", "twitter"].map((social) => (
-                <a
-                  key={social}
-                  href="#"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/70 transition-colors hover:bg-emerald-500 hover:text-white"
-                >
-                  <span className="sr-only">{social}</span>
-                  <span>↗</span>
-                </a>
-              ))}
             </div>
           </div>
         </div>
