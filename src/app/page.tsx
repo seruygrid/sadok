@@ -194,7 +194,7 @@ export default function Home() {
               Справжнє плодове дерево у саду Львівської області — з іменною табличкою, фото та фруктами, які доставимо додому.
             </p>
             <p className="mt-4 text-sm text-white/50 text-center">
-              від 2 490 грн · доставка включена · по всій Україні
+              від 2 490 грн · доставка по всій Україні
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
@@ -277,7 +277,7 @@ export default function Home() {
                     accent: "text-emerald-700",
                     stages: [
                       { icon: "📜", title: "Одразу після покупки", sub: "Сертифікат" },
-                      { icon: "📦", title: "Суботу після висадки", sub: "~2 кг фруктів" },
+                      { icon: "📦", title: "В суботу", sub: "~2 кг фруктів" },
                       { icon: "📦", title: "Через 4 тижні", sub: "~3 кг фруктів" },
                     ],
                   },
@@ -288,7 +288,7 @@ export default function Home() {
                     featured: true,
                     stages: [
                       { icon: "📜", title: "Одразу після покупки", sub: "Сертифікат" },
-                      { icon: "📦", title: "Суботу після висадки", sub: "~3 кг фруктів" },
+                      { icon: "📦", title: "В суботу", sub: "~3 кг фруктів" },
                       { icon: "📦", title: "Через 3 тижні", sub: "~4 кг фруктів" },
                       { icon: "📦", title: "Через 6 тижнів", sub: "~3 кг фруктів" },
                     ],
@@ -299,7 +299,7 @@ export default function Home() {
                     accent: "text-amber-700",
                     stages: [
                       { icon: "📜", title: "Одразу після покупки", sub: "Сертифікат" },
-                      { icon: "📦", title: "Суботу після висадки", sub: "~5 кг фруктів" },
+                      { icon: "📦", title: "В суботу", sub: "~5 кг фруктів" },
                       { icon: "📦", title: "Через 2 тижні", sub: "~5 кг фруктів" },
                       { icon: "📦", title: "Через 4 тижні", sub: "~5 кг фруктів" },
                       { icon: "📦", title: "Через 6 тижнів", sub: "~5 кг фруктів" },
@@ -339,7 +339,7 @@ export default function Home() {
                 { emoji: "🎂", title: "День народження", text: "Подарунок, який нагадуватиме про тебе кожного разу, коли дерево цвіте." },
                 { emoji: "👶", title: "Народження дитини", text: "Дерево росте разом із дитиною. Через 10 років вона побачить «своє дерево» у саду." },
                 { emoji: "💍", title: "Весілля або річниця", text: "Живий символ стосунків — посаджений у важливий день, із датою на табличці." },
-                { emoji: "🕊️", title: "На пам'ять", text: "Дерево як живий пам'ятник — довговічний і реальний, з іменем на табличці." },
+                { emoji: "🌿", title: "Просто так", text: "Іноді не потрібен привід. Дерево — це подарунок, який говорить сам за себе." },
                 { emoji: "🏢", title: "Корпоративний подарунок", text: "Незабутній подарунок команді або партнерам — нестандартний і зі змістом." },
               ].map((item) => (
                 <div key={item.title} className="rounded-3xl bg-white border border-slate-100 p-7 shadow-sm">
@@ -504,7 +504,6 @@ export default function Home() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 mb-2">Засновник</p>
                 <h3 className="text-xl font-bold text-slate-900 mb-1">Сергій Лакодей</h3>
-                <p className="text-sm text-emerald-700 font-semibold mb-4">Засновник Садок</p>
                 <p className="text-sm sm:text-base leading-relaxed text-slate-500">
                   Ідея Садку виникла з простого бажання — дарувати щось живе і справжнє. Не черговий букет, а подарунок з тривалістю. Я особисто відповідаю за кожне дерево і кожну посилку.
                 </p>
